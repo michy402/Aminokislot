@@ -1,0 +1,374 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тест: Аминокислоты</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+  }
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    overflow: hidden;
+  }
+  .header {
+    background: linear-gradient(135deg, #4a5fc1 0%, #6a3fa0 100%);
+    color: #fff;
+    padding: 28px 40px;
+    text-align: center;
+  }
+  .header h1 { font-size: 28px; margin-bottom: 8px; }
+  .header p { font-size: 15px; opacity: .9; }
+
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: #f0f2f5;
+    padding: 12px 40px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 15px;
+  }
+  .progress-bar {
+    flex: 1 1 200px;
+    height: 10px;
+    background: #dde1e7;
+    border-radius: 10px;
+    overflow: hidden;
+    min-width: 120px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    width: 0%;
+    transition: width .3s ease;
+  }
+  .progress-text {
+    font-size: 14px; font-weight: 600; color: #555; white-space: nowrap;
+  }
+  .score-badge {
+    font-size: 14px; font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: #e8eaf6;
+    color: #4a5fc1;
+    white-space: nowrap;
+  }
+
+  .quiz-body { padding: 25px 40px 40px; }
+
+  .question-card {
+    margin-bottom: 22px;
+    padding: 18px 20px;
+    border: 2px solid #e8e8e8;
+    border-radius: 12px;
+    background: #fafafa;
+    transition: border-color .3s, background .3s;
+  }
+  .question-card.answered { border-color: #c5cae9; }
+  .question-card.correct   { border-color: #4caf50; background: #f1f8e9; }
+  .question-card.incorrect { border-color: #f44336; background: #fff3f3; }
+
+  .question-text {
+    font-size: 16px; font-weight: 600; margin-bottom: 14px;
+    line-height: 1.5; color: #2c3e50;
+  }
+  .question-number {
+    display: inline-block;
+    background: #4a5fc1; color: #fff;
+    min-width: 30px; height: 30px; line-height: 30px;
+    text-align: center; border-radius: 50%;
+    font-size: 14px; margin-right: 8px; font-weight: 700;
+    padding: 0 6px;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 9px; }
+  .option {
+    display: flex; align-items: center;
+    padding: 11px 15px;
+    background: #fff;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all .2s;
+    font-size: 15px; line-height: 1.4;
+    user-select: none;
+  }
+  .option:hover:not(.disabled) { border-color: #7986cb; background: #eef1ff; }
+  .option.selected:not(.disabled) { border-color: #4a5fc1; background: #e8eaf6; }
+  .option.correct-answer { border-color: #4caf50 !important; background: #e8f5e9 !important; }
+  .option.wrong-answer  { border-color: #f44336 !important; background: #ffebee !important; }
+  .option.disabled { cursor: default; }
+
+  .option input[type="radio"] {
+    appearance: none;
+    width: 20px; height: 20px;
+    border: 2px solid #9e9e9e;
+    border-radius: 50%;
+    margin-right: 12px;
+    flex-shrink: 0;
+    position: relative;
+    transition: all .2s;
+  }
+  .option input[type="radio"]:checked { border-color: #4a5fc1; background: #4a5fc1; }
+  .option input[type="radio"]:checked::after {
+    content:''; position:absolute; top:50%; left:50%;
+    transform: translate(-50%,-50%);
+    width:8px; height:8px; background:#fff; border-radius:50%;
+  }
+  .option.correct-answer input[type="radio"] { border-color:#4caf50; background:#4caf50; }
+  .option.wrong-answer input[type="radio"]  { border-color:#f44336; background:#f44336; }
+
+  .marker { margin-left: auto; font-size: 18px; padding-left: 8px; flex-shrink: 0; }
+
+  .btn-container {
+    text-align: center;
+    padding: 10px 40px 40px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  .btn {
+    padding: 13px 32px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all .3s;
+  }
+  .btn-secondary { background: #e0e0e0; color: #333; }
+  .btn-secondary:hover { background: #d0d0d0; }
+
+  .hint {
+    font-size: 13px; color: #888; text-align: center; margin: 10px 40px 30px;
+    font-style: italic;
+  }
+
+  @media (max-width: 600px) {
+    .quiz-body, .toolbar, .btn-container { padding-left: 16px; padding-right: 16px; }
+    .header { padding: 22px 16px; }
+    .header h1 { font-size: 22px; }
+    .option { font-size: 14px; }
+    .hint { margin-left: 16px; margin-right: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧪 Аминокислоты</h1>
+    <p>Тест по химии биологически активных веществ · 55 вопросов</p>
+  </div>
+
+  <div class="toolbar">
+    <div class="progress-bar"><div class="progress-bar-fill" id="progressFill"></div></div>
+    <div class="progress-text" id="progressText">0 / 55</div>
+    <div class="score-badge" id="scoreBadge">✓ 0 · ✗ 0</div>
+  </div>
+
+  <div class="quiz-body" id="quizBody"></div>
+
+  <div class="hint">Ответ проверяется сразу при выборе — правильный подсветится зелёным, неправильный красным.</div>
+
+  <div class="btn-container">
+    <button class="btn btn-secondary" id="resetBtn">Пройти заново</button>
+  </div>
+</div>
+
+<script>
+/* ===== Данные теста (из XML) ===== */
+const questionsData = [
+ {n:1,text:"К моноаминомонокарбоновым относится кислота:",options:[{t:"валин",c:true},{t:"орнитин",c:false},{t:"лизин",c:false},{t:"аспарагиновая",c:false}]},
+ {n:2,text:"Неприродными аминокислотами называют:",options:[{t:"α-аминокислоты L-ряда",c:false},{t:"α-аминокислоты D-ряда",c:true},{t:"аминокислоты, не содержащие асимметрический центр",c:false},{t:"аминокислоты, которые не синтезируются в организме, а поступают только с пищей",c:false}]},
+ {n:3,text:"В результате реакции Ван-Слайка аспарагиновая кислота превращается в:",options:[{t:"гликолевую кислоту",c:false},{t:"молочную кислоту",c:false},{t:"лимонную кислоту",c:false},{t:"яблочную кислоту",c:true}]},
+ {n:4,text:"Под действием какого фермента фенилаланин превращается в тирозин?",options:[{t:"трансаминаза",c:false},{t:"гидроксилаза",c:true},{t:"дегидрогеназа",c:false},{t:"декарбоксилаза",c:false}]},
+ {n:5,text:"К моноаминодикарбоновым кислотам относится:",options:[{t:"изолейцин",c:false},{t:"аргинин",c:false},{t:"аланин",c:false},{t:"глутаминовая",c:true}]},
+ {n:6,text:"Для аминокислот не характерна реакция:",options:[{t:"трансаминирования",c:false},{t:"дезаминирования",c:false},{t:"декарбоксилирования",c:false},{t:"полимеризации",c:true}]},
+ {n:7,text:"Выберите правильное утверждение:",options:[{t:"аминокислоты обладают только кислотными свойствами",c:false},{t:"аминокислоты обладают только оснόвными свойствами",c:false},{t:"аминокислоты обладают амфотерными свойствами",c:true},{t:"аминокислоты не взаимодействуют ни с кислотами, ни с основаниями",c:false}]},
+ {n:8,text:"Общей качественной реакцией на α-аминокислоты является:",options:[{t:"ксантопротеиновая реакция",c:false},{t:"биуретовая реакция",c:true},{t:"нингидриновая реакция",c:false},{t:"реакция Фоля",c:false}]},
+ {n:9,text:"К серусодержащим аминокислотам относится:",options:[{t:"метионин",c:true},{t:"треонин",c:false},{t:"серин",c:false},{t:"тирозин",c:false}]},
+ {n:10,text:"При растворении какой аминокислоты в воде рН раствора останется равным 7?",options:[{t:"аланина",c:true},{t:"орнитина",c:false},{t:"лизина",c:false},{t:"аспарагиновой кислоты",c:false}]},
+ {n:11,text:"Какой фермент катализирует процесс превращения гистидина в гистамин?",options:[{t:"дегидрогеназа",c:false},{t:"декарбоксилаза",c:true},{t:"трансаминаза",c:false},{t:"гидроксилаза",c:false}]},
+ {n:12,text:"К незаменимым аминокислотам, содержащим гетероциклический радикал относится:",options:[{t:"гистидин",c:false},{t:"пролин",c:false},{t:"триптофан",c:true},{t:"фенилаланин",c:false}]},
+ {n:13,text:"Какое утверждение не соответствует свойствам аминокислоты аланина?",options:[{t:"В растворе существует в виде биполярного иона",c:false},{t:"Образует соли как с кислотами, так и с основаниями",c:false},{t:"При растворении в воде имеет рН > 7",c:true},{t:"является моноаминомонокарбоновой кислотой",c:false}]},
+ {n:14,text:"Качественной реакцией на серусодержащие аминокислоты является:",options:[{t:"реакция Троммера",c:false},{t:"реакция Толленса",c:false},{t:"реакция Фоля",c:true},{t:"реакция Фелинга",c:false}]},
+ {n:15,text:"К диаминомонокарбоновым кислотам относится",options:[{t:"цистин",c:false},{t:"лейцин",c:false},{t:"цистеин",c:false},{t:"лизин",c:true}]},
+ {n:16,text:"Метод Сёренсена используется для количественного определения аминокислот. Это реакция взаимодействия аминокислоты с:",options:[{t:"Cu(OH)2",c:false},{t:"формальдегидом и щелочью",c:true},{t:"азотистой кислотой",c:false},{t:"аммиачным раствором Ag2O",c:false}]},
+ {n:17,text:"При каком атоме углерода находится аминогруппа в γ-аминомасляной кислоте (ГАМК)?",options:[{t:"1",c:false},{t:"3",c:false},{t:"2",c:false},{t:"4",c:true}]},
+ {n:18,text:"Укажите рН водного раствора аминокислоты лейцина:",options:[{t:"рН<7",c:false},{t:"рН≈7",c:true},{t:"рН > 7",c:false},{t:"рН не зависит от строения аминокислоты",c:false}]},
+ {n:19,text:"Из перечисленных аминокислот укажите заменимую:",options:[{t:"валин",c:false},{t:"глицин",c:true},{t:"лейцин",c:false},{t:"лизин",c:false}]},
+ {n:20,text:"Укажите аминокислоту, рН водного раствора которой находится в кислой среде:",options:[{t:"глицин",c:false},{t:"изолейцин",c:false},{t:"аргинин",c:false},{t:"глутаминовая кислота",c:true}]},
+ {n:21,text:"Существование аминокислот в растворах в виде биполярного иона объясняется наличием:",options:[{t:"лактим-лактамной таутомерии",c:false},{t:"кольчато-цепной таутомерии",c:false},{t:"прототропной таутомерии",c:true},{t:"кето-енольной таутомерии",c:false}]},
+ {n:22,text:"Выберите одно неверное утверждение:",options:[{t:"α-D-Аминокислоты входят в состав природных белков",c:true},{t:"При декарбоксилировании моноаминомонакарбоновых α-кислот образуются амины",c:false},{t:"При нагревании из двух молекул α-аминокислот образуются дикетопиперазины",c:false},{t:"При взаимодействии двух аминокислот образуются дипептиды",c:false}]},
+ {n:23,text:"Укажите аминокислоту, содержащую в своей структуре фенольный гидроксил:",options:[{t:"треонин",c:false},{t:"тирозин",c:true},{t:"серин",c:false},{t:"гидроксипролин",c:false}]},
+ {n:24,text:"При взаимодействии аланина с щавелевоуксусной кислотой образуются:",options:[{t:"пировиноградная кислота и аспарагиновая кислота",c:true},{t:"пировиноградная кислота и ацетоуксусная кислота",c:false},{t:"ацетоуксусная кислота и аспарагиновая кислота",c:false},{t:"глутаминовая кислота и ацетоуксусная кислота",c:false}]},
+ {n:25,text:"C Cu(OH)2 хелатные комплексы не образует:",options:[{t:"формальдегид",c:true},{t:"глицерин",c:false},{t:"глюкоза",c:false},{t:"аланин",c:false}]},
+ {n:26,text:"Из перечисленных соединений выберите газообразный продукт, который получается при взаимодействии α-аминокислот с азотистой кислотой:",options:[{t:"NH3",c:false},{t:"NO2",c:false},{t:"NO",c:false},{t:"N2",c:true}]},
+ {n:27,text:"К дикарбоновым аминокислотам относятся:",options:[{t:"аланин",c:false},{t:"валин",c:false},{t:"глицин",c:false},{t:"глутаминовая",c:true}]},
+ {n:28,text:"Какое утверждение верно для незаменимых аминокислот?",options:[{t:"не могут синтезироваться в организме из других веществ",c:true},{t:"содержатся только в животной пище",c:false},{t:"могут синтезироваться только в организме человека",c:false},{t:"содержатся только в растительной пище",c:false}]},
+ {n:29,text:"Укажите рН водного раствора лизина:",options:[{t:"рН≈7",c:false},{t:"рН > 7",c:true},{t:"рН < 7",c:false},{t:"рН не зависит от строения аминокислоты",c:false}]},
+ {n:30,text:"Из перечисленных аминокислот укажите ту, которая не обладает оптической активностью:",options:[{t:"лейцин",c:false},{t:"валин",c:false},{t:"изолейцин",c:false},{t:"глицин",c:true}]},
+ {n:31,text:"Реакция Ван-Слайка – это взаимодействие аминокислот с:",options:[{t:"азотистой кислотой",c:true},{t:"азотной кислотой и щелочью",c:false},{t:"Cu(OH)2",c:false},{t:"формальдегидом и щелочью",c:false}]},
+ {n:32,text:"Образование кротоновой кислоты из β-аминомасляной является реакцией:",options:[{t:"дегидрирования",c:false},{t:"декарбоксилирования",c:true},{t:"дезаминирования",c:false},{t:"дегидратации",c:false}]},
+ {n:33,text:"Укажите рН водного раствора глутаминовой кислоты:",options:[{t:"рН > 7",c:false},{t:"рН≈ 7",c:false},{t:"рН < 7",c:true},{t:"рН не зависит от строения аминокислоты",c:false}]},
+ {n:34,text:"Из перечисленных аминокислот укажите ту, которая в своём строении не содержит гидроксигруппу:",options:[{t:"серин",c:false},{t:"тирозин",c:false},{t:"треонин",c:false},{t:"пролин",c:true}]},
+ {n:35,text:"Укажите аминокислоту, рН водного раствора которой находится в щелочной среде:",options:[{t:"лизин",c:true},{t:"глутаминовая",c:false},{t:"валин",c:false},{t:"аспарагиновая",c:false}]},
+ {n:36,text:"Выберите одно правильное утверждение относительно гистидина и триптофана:",options:[{t:"В результате метаболических реакций в организме гистидин и триптофан взаимно превращаются друг в друга",c:false},{t:"В основе аминокислоты триптофана лежит гетероцикл бензимидазол",c:false},{t:"Нейромедиатор серотонин образуется при декарбоксилировании триптофана",c:false},{t:"В основе аминокислоты гистидина лежит гетероцикл имидазол",c:true}]},
+ {n:37,text:"Какой витамин катализирует реакцию трансаминирования аминокислот с кетокислотами?",options:[{t:"vit PP",c:false},{t:"vit B6",c:true},{t:"vit C",c:false},{t:"vit B12",c:false}]},
+ {n:38,text:"К аминокислотам относится:",options:[{t:"глицерин",c:false},{t:"анилин",c:false},{t:"дифениламин",c:false},{t:"фенилаланин",c:true}]},
+ {n:39,text:"Глицин и аланин являются:",options:[{t:"структурными изомерами",c:false},{t:"геометрическими изомерами",c:false},{t:"одним и тем же веществом",c:false},{t:"гомологами",c:true}]},
+ {n:40,text:"Аминокислоты не могут реагировать:",options:[{t:"с предельными углеводородами",c:true},{t:"с кислотами и спиртами",c:false},{t:"с основаниями и кислотами",c:false},{t:"между собой",c:false}]},
+ {n:41,text:"В водном растворе глицина лакмус имеет:",options:[{t:"фиолетовый цвет",c:true},{t:"красный цвет",c:false},{t:"синий цвет",c:false},{t:"оранжевый цвет",c:false}]},
+ {n:42,text:"Фиолетовое окрашивание появляется при действии на белок:",options:[{t:"раствора сульфата меди (II) в щелочной среде",c:true},{t:"аммиачного раствора оксида серебра",c:false},{t:"концентрированной азотной кислоты",c:false},{t:"раствора хлорида железа (III)",c:false}]},
+ {n:43,text:"Продуктами гидролиза белков, углеводов и жиров могут являться соответственно:",options:[{t:"глицерин, амины, глюкоза",c:false},{t:"карбоновые кислоты, целлюлоза, анилин",c:false},{t:"аминокислоты, глюкоза, глицерин",c:true},{t:"аминокислоты, крахмал, спирты",c:false}]},
+ {n:44,text:"Первичной структурой белка является:",options:[{t:"последовательность аминокислотных остатков в полипептидной цепи",c:true},{t:"пространственная конфигурация полипептидной цепи",c:false},{t:"объём, форма и взаимное расположение участков цепи",c:false},{t:"соединение белковых макромолекул",c:false}]},
+ {n:45,text:"Верны ли следующие суждения о свойствах белков: а) белки, содержащие остатки ароматических аминокислот, реагируют с азотной кислотой; б) при полном гидролизе белков образуется смесь аминокислот?",options:[{t:"верно только а",c:false},{t:"верны оба утверждения",c:true},{t:"верно только б",c:false},{t:"оба утверждения неверны",c:false}]},
+ {n:46,text:"К классу аминокислот относится это вещество:",options:[{t:"C6H5NO2",c:false},{t:"CH2NH2 – COOH",c:true},{t:"NH2 – CH2 – CH2 – NH2",c:false},{t:"NH2-CH2-CH2-OH",c:false}]},
+ {n:47,text:"Аминокислоты не взаимодействуют",options:[{t:"со спиртами",c:false},{t:"с циклоалканами",c:true},{t:"со щелочами",c:false},{t:"с кислотами",c:false}]},
+ {n:48,text:"Биполярный ион аминокислоты образуется",options:[{t:"при взаимодействии с кислотами",c:false},{t:"при взаимодействии со щелочами",c:false},{t:"при внутренней нейтрализации",c:true},{t:"никогда не образуется",c:false}]},
+ {n:49,text:"Аминокислоты – амфотерные соединения, потому что",options:[{t:"реагируют с водой",c:false},{t:"содержат амино- и карбоксильные группы",c:true},{t:"образуют сложные эфиры",c:false},{t:"реагируют со щелочами",c:false}]},
+ {n:50,text:"Сумма всех коэффициентов в уравнении реакции, схема которого Н2N – CН2 – СООН + NaOH → равна:",options:[{t:"5",c:false},{t:"4",c:true},{t:"3",c:false},{t:"2",c:false}]},
+ {n:51,text:"Правильны ли следующие суждения о свойствах белков: 1. белки, содержащие остатки ароматических аминокислот, реагируют с азотной кислотой; 2. при полном гидролизе белков образуется смесь аминокислот",options:[{t:"верно 1",c:false},{t:"верно 2",c:false},{t:"оба верны",c:true},{t:"оба не верны",c:false}]},
+ {n:52,text:"Между какими функциональными группами соседних аминокислот в белке образуется пептидная связь?",options:[{t:"карбоксильные группы",c:false},{t:"карбоксильная группа и радикал",c:false},{t:"карбоксильная группа и аминогруппа",c:true},{t:"между соседними аминогруппами",c:false}]},
+ {n:53,text:"Какой белок выполняет по большей степени транспортную функцию?",options:[{t:"коллаген",c:false},{t:"гемоглобин",c:true},{t:"фибрин",c:false},{t:"кератин",c:false}]},
+ {n:54,text:"Какую основную функцию выполняют такие белки – кератин, коллаген, тубулин?",options:[{t:"транспортная",c:false},{t:"строительная",c:true},{t:"ферментативная",c:false},{t:"регуляторная",c:false}]},
+ {n:55,text:"Из перечисленных аминокислот укажите заменимую:",options:[{t:"валин",c:false},{t:"глицин",c:true},{t:"лейцин",c:false},{t:"лизин",c:false}]}
+];
+
+/* ===== Состояние ===== */
+const answers = {};      // {qIndex: oIndex} — выбранный вариант
+let correctCount = 0;
+let wrongCount = 0;
+
+const quizBody    = document.getElementById('quizBody');
+const progressFill= document.getElementById('progressFill');
+const progressText= document.getElementById('progressText');
+const scoreBadge  = document.getElementById('scoreBadge');
+const resetBtn    = document.getElementById('resetBtn');
+
+/* ===== Рендер всех вопросов списком ===== */
+function renderQuestions() {
+  quizBody.innerHTML = '';
+  questionsData.forEach((q, qi) => {
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.id = 'qcard-' + qi;
+
+    const qText = document.createElement('div');
+    qText.className = 'question-text';
+    qText.innerHTML = `<span class="question-number">${q.n}</span>${escapeHtml(q.text)}`;
+    card.appendChild(qText);
+
+    const optsWrap = document.createElement('div');
+    optsWrap.className = 'options';
+
+    q.options.forEach((opt, oi) => {
+      const label = document.createElement('label');
+      label.className = 'option';
+      label.dataset.qindex = qi;
+      label.dataset.oindex = oi;
+
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'q_' + qi;
+      radio.value = oi;
+      radio.addEventListener('change', () => selectOption(qi, oi));
+
+      const span = document.createElement('span');
+      span.textContent = opt.t;
+
+      const marker = document.createElement('span');
+      marker.className = 'marker';
+
+      label.appendChild(radio);
+      label.appendChild(span);
+      label.appendChild(marker);
+      optsWrap.appendChild(label);
+    });
+
+    card.appendChild(optsWrap);
+    quizBody.appendChild(card);
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ===== Мгновенная проверка при выборе ===== */
+function selectOption(qi, oi) {
+  if (answers[qi] !== undefined) return; // уже отвечен — менять нельзя
+
+  answers[qi] = oi;
+  const q = questionsData[qi];
+  const correctIndex = q.options.findIndex(o => o.c);
+  const card = document.getElementById('qcard-' + qi);
+
+  card.querySelectorAll('.option').forEach(el => {
+    const idx = Number(el.dataset.oindex);
+    el.classList.add('disabled');
+    el.querySelector('input').disabled = true;
+    const marker = el.querySelector('.marker');
+
+    if (idx === correctIndex) {
+      el.classList.add('correct-answer');
+      marker.textContent = '✓';
+    }
+    if (idx === oi && oi !== correctIndex) {
+      el.classList.add('wrong-answer');
+      marker.textContent = '✗';
+    }
+  });
+
+  if (oi === correctIndex) {
+    card.classList.add('correct');
+    correctCount++;
+  } else {
+    card.classList.add('incorrect');
+    wrongCount++;
+  }
+
+  updateProgress();
+}
+
+function updateProgress() {
+  const answered = Object.keys(answers).length;
+  const total = questionsData.length;
+  progressFill.style.width = (answered / total * 100) + '%';
+  progressText.textContent = answered + ' / ' + total;
+  scoreBadge.textContent = '✓ ' + correctCount + ' · ✗ ' + wrongCount;
+}
+
+/* ===== Сброс / начать заново ===== */
+function resetQuiz() {
+  Object.keys(answers).forEach(k => delete answers[k]);
+  correctCount = 0;
+  wrongCount = 0;
+  renderQuestions();
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+resetBtn.addEventListener('click', resetQuiz);
+
+/* ===== Старт ===== */
+renderQuestions();
+updateProgress();
+</script>
+</body>
+</html>
